@@ -1,0 +1,18 @@
+# Ignore git directory
+.git
+
+# Ignore local environment files (we pass env vars via docker-compose)
+.env
+
+# Ignore build artifacts
+main
+*.exe
+*.test
+
+# Ignore VS Code settings
+.vscode
+
+# Ignore coverage reports
+coverage.out
+report.html
+coverage-controllers.html

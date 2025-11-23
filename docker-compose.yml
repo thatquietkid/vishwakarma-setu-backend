@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # The Go Backend Service
+  app:
+    container_name: vishwakarma_backend
+    build: .
+    ports:
+      - "1326:1326"
+    restart: on-failure
+    depends_on:
+      - db
+    environment:
+      - PORT=1326
+      # Host is 'db' (service name)
+      - DATABASE_DSN=host=db user=vishwakarma_user password=password dbname=vishwakarma_db port=5432 sslmode=disable
+      - JWT_SECRET=your_jwt_secret_key
+
+  # The PostgreSQL Database Service
+  db:
+    image: postgres:15-alpine
+    container_name: vishwakarma_db
+    restart: always
+    environment:
+      # Match these credentials with DATABASE_DSN above
+      - POSTGRES_USER=vishwakarma_user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=vishwakarma_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
