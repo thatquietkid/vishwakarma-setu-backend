@@ -49,13 +49,17 @@ func setupTestDB(t *testing.T, seed []models.Machine) *gorm.DB {
 	if err != nil {
 		t.Fatalf("failed to connect to test db: %v", err)
 	}
-	err = db.Migrator().DropTable(&models.Machine{})
-	if err != nil {
-		t.Fatalf("failed to drop table: %v", err)
-	}
-	if err := db.AutoMigrate(&models.Machine{}); err != nil {
+
+	// CLEANUP: Drop tables to ensure a clean state (Rentals first due to foreign key)
+	// We ignore errors here in case tables don't exist yet
+	_ = db.Migrator().DropTable(&models.Rental{})
+	_ = db.Migrator().DropTable(&models.Machine{})
+
+	// MIGRATE BOTH MODELS
+	if err := db.AutoMigrate(&models.Machine{}, &models.Rental{}); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
+
 	if len(seed) > 0 {
 		if err := db.Create(&seed).Error; err != nil {
 			t.Fatalf("failed to seed: %v", err)

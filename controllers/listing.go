@@ -11,7 +11,7 @@ import (
 	"github.com/vishwakarma-setu-backend/models"
 )
 
-// Helper function to extract user ID from token (unchanged)
+// Helper function to extract user ID from token
 func getUserIDFromToken(c echo.Context) (uint, error) {
 	userToken := c.Get("user").(*jwt.Token)
 	claims := userToken.Claims.(*jwt.MapClaims)
@@ -23,7 +23,18 @@ func getUserIDFromToken(c echo.Context) (uint, error) {
 	return 0, echo.NewHTTPError(http.StatusUnauthorized, "Invalid token claims: user_id missing or invalid")
 }
 
-// CreateListing (unchanged)
+// CreateListing godoc
+// @Summary Create a new machine listing
+// @Description Register a new machine for sale or rent. Requires a valid Seller JWT token.
+// @Tags Machines
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param machine body models.Machine true "Machine Details"
+// @Success 201 {object} models.Machine
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Router /machines [post]
 func CreateListing(c echo.Context) error {
 	var machine models.Machine
 	if err := c.Bind(&machine); err != nil {
@@ -44,15 +55,31 @@ func CreateListing(c echo.Context) error {
 	return c.JSON(http.StatusCreated, machine)
 }
 
-// GetAllListings - GET /api/machines (Search Implementation)
+// GetAllListings godoc
+// @Summary Get all machine listings
+// @Description Retrieve a list of machines with optional filtering, sorting, and pagination.
+// @Tags Machines
+// @Produce json
+// @Param q query string false "Search query (Title/Description)"
+// @Param category query string false "Filter by Category"
+// @Param manufacturer query string false "Filter by Manufacturer"
+// @Param location query string false "Filter by Location"
+// @Param type query string false "Filter by Listing Type (sale, rent)"
+// @Param min_price query number false "Minimum Price (Sale)"
+// @Param max_price query number false "Maximum Price (Sale)"
+// @Param sort query string false "Sort order (price_asc, price_desc, oldest)"
+// @Param page query int false "Page number (default 1)"
+// @Param limit query int false "Items per page (default 10)"
+// @Success 200 {object} map[string]interface{} "Returns data array and pagination meta"
+// @Failure 500 {object} map[string]string
+// @Router /machines [get]
 func GetAllListings(c echo.Context) error {
 	var machines []models.Machine
 	query := config.DB.Model(&models.Machine{})
 
-	// 1. Keyword Search (Title & Description)
+	// 1. Keyword Search
 	if q := c.QueryParam("q"); q != "" {
 		searchTerm := "%" + strings.ToLower(q) + "%"
-		// UPDATED: Use LOWER() LIKE LOWER() for SQLite compatibility in tests
 		query = query.Where("LOWER(title) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?)", searchTerm, searchTerm)
 	}
 
@@ -64,11 +91,10 @@ func GetAllListings(c echo.Context) error {
 		query = query.Where("manufacturer = ?", manufacturer)
 	}
 	if location := c.QueryParam("location"); location != "" {
-		// UPDATED: Use LOWER() LIKE LOWER() for SQLite compatibility in tests
 		query = query.Where("LOWER(location) LIKE LOWER(?)", "%"+location+"%")
 	}
 
-	// 3. Listing Type Filter (sale, rent)
+	// 3. Listing Type Filter
 	if listingType := c.QueryParam("type"); listingType != "" {
 		if listingType == "sale" {
 			query = query.Where("listing_type IN (?, ?)", "sale", "both")
@@ -95,7 +121,7 @@ func GetAllListings(c echo.Context) error {
 	case "oldest":
 		query = query.Order("created_at asc")
 	default:
-		query = query.Order("created_at desc") // Default: Newest first
+		query = query.Order("created_at desc")
 	}
 
 	// 6. Pagination
@@ -105,7 +131,6 @@ func GetAllListings(c echo.Context) error {
 	if limit <= 0 { limit = 10 }
 	offset := (page - 1) * limit
 
-	// Execute Query
 	var total int64
 	query.Count(&total) 
 	
@@ -122,7 +147,15 @@ func GetAllListings(c echo.Context) error {
 	})
 }
 
-// GetListingByID (unchanged)
+// GetListingByID godoc
+// @Summary Get a machine by ID
+// @Description Retrieve full details of a specific machine listing.
+// @Tags Machines
+// @Produce json
+// @Param id path string true "Machine ID (UUID)"
+// @Success 200 {object} models.Machine
+// @Failure 404 {object} map[string]string "Machine not found"
+// @Router /machines/{id} [get]
 func GetListingByID(c echo.Context) error {
 	id := c.Param("id")
 	var machine models.Machine
@@ -132,7 +165,19 @@ func GetListingByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, machine)
 }
 
-// UpdateListing (unchanged)
+// UpdateListing godoc
+// @Summary Update a listing
+// @Description Update details of an existing machine listing. Only the owner can perform this.
+// @Tags Machines
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Machine ID"
+// @Param machine body models.Machine true "Updated Machine Data"
+// @Success 200 {object} models.Machine
+// @Failure 403 {object} map[string]string "Not authorized"
+// @Failure 404 {object} map[string]string "Machine not found"
+// @Router /machines/{id} [put]
 func UpdateListing(c echo.Context) error {
 	id := c.Param("id")
 	var machine models.Machine
@@ -146,6 +191,7 @@ func UpdateListing(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid token"})
 	}
 
+	// Strict Ownership Check
 	if machine.SellerID != userID {
 		return c.JSON(http.StatusForbidden, map[string]string{"error": "You are not authorized to update this listing"})
 	}
@@ -155,7 +201,6 @@ func UpdateListing(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
 	}
 
-	// Explicitly update fields
 	machine.Title = updateData.Title
 	machine.Description = updateData.Description
 	machine.Category = updateData.Category       
@@ -172,7 +217,17 @@ func UpdateListing(c echo.Context) error {
 	return c.JSON(http.StatusOK, machine)
 }
 
-// DeleteListing (unchanged)
+// DeleteListing godoc
+// @Summary Delete a listing
+// @Description Permanently remove a machine listing. Only the owner can perform this.
+// @Tags Machines
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Machine ID"
+// @Success 200 {object} map[string]string "Success message"
+// @Failure 403 {object} map[string]string "Not authorized"
+// @Failure 404 {object} map[string]string "Machine not found"
+// @Router /machines/{id} [delete]
 func DeleteListing(c echo.Context) error {
 	id := c.Param("id")
 	var machine models.Machine
@@ -186,6 +241,7 @@ func DeleteListing(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid token"})
 	}
 
+	// Strict Ownership Check
 	if machine.SellerID != userID {
 		return c.JSON(http.StatusForbidden, map[string]string{"error": "You are not authorized to delete this listing"})
 	}

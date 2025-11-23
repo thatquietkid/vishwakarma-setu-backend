@@ -47,7 +47,7 @@ Create a `.env` file in the project root:
 
 ```env
 # Server Config
-PORT=1326
+PORT=1324
 FRONTEND_URL=http://localhost:3000
 
 # Database Config
@@ -77,7 +77,40 @@ CREATE DATABASE vishwakarma_db;
 go run .
 ```
 
-The server runs at **[http://localhost:1326](http://localhost:1326)** (or the configured `PORT`).
+The server runs at (http://localhost:1326)[http://localhost:1326] (or the configured `PORT`). The API is mounted under the /api base path.
+
+---
+
+## 📘 API Documentation (Swagger / OpenAPI)
+
+The project includes Swagger annotations in the code (main.go, controllers) and ships generated docs. By default the server exposes the Swagger UI when swagger handlers are registered (commonly at `/swagger/index.html`).
+
+To generate or update the docs locally:
+
+1. Install swag (if not installed):
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest
+```
+
+2. Generate docs:
+```bash
+swag init -g main.go -o docs
+```
+
+3. Run the server:
+```bash
+PORT=1326 go run .
+```
+
+4. Open the Swagger UI in your browser:
+- http://localhost:1326/swagger/index.html
+or, if the project serves the JSON directly:
+- http://localhost:1326/swagger/doc.json
+
+Notes:
+- The service uses BasePath `/api` (see main.go annotations).
+- Swagger security is configured as BearerAuth; use the Authorization header: `Authorization: Bearer <token>`.
+- If your host/port differ, replace `localhost:1326` accordingly.
 
 ---
 
@@ -178,13 +211,23 @@ vishwakarma-setu-backend/
 ├── config/
 │   └── database.go      # DB connection & migration logic
 ├── controllers/
-│   └── listing.go       # Handlers for Machine CRUD operations
-├── middleware/
-│   └── auth.go          # JWT validation middleware configuration
+│   ├── index.go         # Controller package index / helpers
+│   ├── listing.go       # Handlers for Machine CRUD operations
+│   ├── listing_test.go  # Tests for listing handlers (skeleton)
+│   ├── rentals.go       # Handlers for rental requests & management
+│   └── rentals_test.go  # Tests for rentals (skeleton)
+├── docs/
+│   ├── docs.go          # Swagger docs package (placeholder / generated)
+│   ├── swagger.json     # Generated swagger JSON (placeholder)
+│   └── swagger.yaml     # Generated swagger YAML (placeholder)
 ├── models/
-│   └── machines.go      # Gorm model definition for 'machines' (contains category, location, specs JSON, prices)
+│   ├── machines.go      # Gorm model definition for 'machines'
+│   └── rentals.go       # Gorm model definition for 'rentals'
 ├── routes/
 │   └── routes.go        # API route definitions & grouping
+├── coverage-controllers.html  # Coverage report (controllers) - HTML (placeholder)
+├── report.html          # Test/report HTML (placeholder)
+├── LICENSE              # Project license
 ├── .env                 # Environment variables (ignored in Git)
 ├── go.mod               # Go module definition
 └── main.go              # Entry point & server configuration
@@ -206,3 +249,15 @@ vishwakarma-setu-backend/
 * Check if PostgreSQL is running.
 * Verify `.env` credentials.
 * Ensure the database exists.
+
+
+### Testing * Run tests with:
+
+```bash
+go test ./...
+```
+
+To view coverage report in HTML format, run:
+```bash
+go test -json ./... | go-test-report -o report.html
+```

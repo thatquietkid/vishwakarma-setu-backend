@@ -1,0 +1,479 @@
+basePath: /api
+definitions:
+  controllers.RentalRequest:
+    properties:
+      end_date:
+        description: 'Format: YYYY-MM-DD'
+        example: "2025-01-05"
+        type: string
+      machine_id:
+        example: uuid-string
+        type: string
+      start_date:
+        description: 'Format: YYYY-MM-DD'
+        example: "2025-01-01"
+        type: string
+    type: object
+  controllers.RentalStatusUpdate:
+    properties:
+      status:
+        description: approved, rejected, completed
+        example: approved
+        type: string
+    type: object
+  models.Machine:
+    type: object
+  models.Rental:
+    properties:
+      created_at:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      machine:
+        allOf:
+        - $ref: '#/definitions/models.Machine'
+        description: Preloads (Optional, for returning full details)
+      machine_id:
+        type: string
+      platform_fee:
+        description: e.g. 5%
+        type: number
+      renter_id:
+        description: Matches Auth Service ID type
+        type: integer
+      security_deposit:
+        type: number
+      start_date:
+        type: string
+      status:
+        description: 'Status Flow: pending -> approved -> active -> completed (or
+          rejected/cancelled)'
+        type: string
+      total_amount:
+        description: Financials
+        type: number
+      updated_at:
+        type: string
+    type: object
+host: localhost:1324
+info:
+  contact: {}
+  description: Backend API for Vishwakarma Setu B2B Marketplace.
+  title: Vishwakarma Setu API
+  version: "1.0"
+paths:
+  /:
+    get:
+      description: Returns a welcome message for the API.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Welcome Message
+      tags:
+      - General
+  /bad-request:
+    get:
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Bad Request Handler
+      tags:
+      - Errors
+  /forbidden:
+    get:
+      produces:
+      - application/json
+      responses:
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Forbidden Handler
+      tags:
+      - Errors
+  /health:
+    get:
+      description: Checks if the backend server is running.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health Check
+      tags:
+      - General
+  /internal-server-error:
+    get:
+      produces:
+      - application/json
+      responses:
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Internal Server Error Handler
+      tags:
+      - Errors
+  /machines:
+    get:
+      description: Retrieve a list of machines with optional filtering, sorting, and
+        pagination.
+      parameters:
+      - description: Search query (Title/Description)
+        in: query
+        name: q
+        type: string
+      - description: Filter by Category
+        in: query
+        name: category
+        type: string
+      - description: Filter by Manufacturer
+        in: query
+        name: manufacturer
+        type: string
+      - description: Filter by Location
+        in: query
+        name: location
+        type: string
+      - description: Filter by Listing Type (sale, rent)
+        in: query
+        name: type
+        type: string
+      - description: Minimum Price (Sale)
+        in: query
+        name: min_price
+        type: number
+      - description: Maximum Price (Sale)
+        in: query
+        name: max_price
+        type: number
+      - description: Sort order (price_asc, price_desc, oldest)
+        in: query
+        name: sort
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 10)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns data array and pagination meta
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all machine listings
+      tags:
+      - Machines
+    post:
+      consumes:
+      - application/json
+      description: Register a new machine for sale or rent. Requires a valid Seller
+        JWT token.
+      parameters:
+      - description: Machine Details
+        in: body
+        name: machine
+        required: true
+        schema:
+          $ref: '#/definitions/models.Machine'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Machine'
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new machine listing
+      tags:
+      - Machines
+  /machines/{id}:
+    delete:
+      description: Permanently remove a machine listing. Only the owner can perform
+        this.
+      parameters:
+      - description: Machine ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Not authorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Machine not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a listing
+      tags:
+      - Machines
+    get:
+      description: Retrieve full details of a specific machine listing.
+      parameters:
+      - description: Machine ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Machine'
+        "404":
+          description: Machine not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a machine by ID
+      tags:
+      - Machines
+    put:
+      consumes:
+      - application/json
+      description: Update details of an existing machine listing. Only the owner can
+        perform this.
+      parameters:
+      - description: Machine ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated Machine Data
+        in: body
+        name: machine
+        required: true
+        schema:
+          $ref: '#/definitions/models.Machine'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Machine'
+        "403":
+          description: Not authorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Machine not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a listing
+      tags:
+      - Machines
+  /not-found:
+    get:
+      produces:
+      - application/json
+      responses:
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Not Found Handler
+      tags:
+      - Errors
+  /rentals:
+    post:
+      consumes:
+      - application/json
+      description: Initiate a rental request. Calculates fees based on duration. Requires
+        Renter Auth.
+      parameters:
+      - description: Rental Details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.RentalRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Rental'
+        "400":
+          description: Invalid input or dates
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Machine not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Request to rent a machine
+      tags:
+      - Rentals
+  /rentals/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Approve, reject, or complete a rental. Only the machine owner can
+        do this.
+      parameters:
+      - description: Rental ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New Status
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.RentalStatusUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Rental'
+        "403":
+          description: Not authorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update rental status
+      tags:
+      - Rentals
+  /rentals/manage:
+    get:
+      description: Retrieve all incoming rental requests for machines owned by the
+        logged-in user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Rental'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get rental requests for my machines
+      tags:
+      - Rentals
+  /rentals/my:
+    get:
+      description: Retrieve all rental requests made by the logged-in user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Rental'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get my rental history
+      tags:
+      - Rentals
+  /unauthorized:
+    get:
+      produces:
+      - application/json
+      responses:
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Unauthorized Handler
+      tags:
+      - Errors
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

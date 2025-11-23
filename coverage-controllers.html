@@ -59,6 +59,8 @@
 				
 				<option value="file1">github.com/vishwakarma-setu-backend/controllers/listing.go (88.4%)</option>
 				
+				<option value="file2">github.com/vishwakarma-setu-backend/controllers/rentals.go (80.4%)</option>
+				
 				</select>
 			</div>
 			<div id="legend">
@@ -311,6 +313,154 @@ func DeleteListing(c echo.Context) error <span class="cov8" title="1">{
                 return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete listing"})
         }</span>
         <span class="cov8" title="1">return c.JSON(http.StatusOK, map[string]string{"message": "Listing deleted successfully"})</span>
+}</pre>
+		
+		<pre class="file" id="file2" style="display: none">package controllers
+
+import (
+        "math"
+        "net/http"
+        "time"
+
+        "github.com/labstack/echo/v4"
+        "github.com/vishwakarma-setu-backend/config"
+        "github.com/vishwakarma-setu-backend/models"
+)
+
+// Request Payload
+type RentalRequest struct {
+        MachineID string `json:"machine_id"`
+        StartDate string `json:"start_date"` // Format: YYYY-MM-DD
+        EndDate   string `json:"end_date"`   // Format: YYYY-MM-DD
+}
+
+// CreateRentalRequest - POST /api/rentals
+func CreateRentalRequest(c echo.Context) error <span class="cov8" title="1">{
+        var req RentalRequest
+        if err := c.Bind(&amp;req); err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+        }</span>
+
+        // Validation for Empty Body or Missing ID
+        <span class="cov8" title="1">if req.MachineID == "" </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "Machine ID is required"})
+        }</span>
+
+        // 1. Get Renter ID
+        <span class="cov8" title="1">renterID, err := getUserIDFromToken(c)
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+        }</span>
+
+        // 2. Fetch Machine to check availability and price
+        <span class="cov8" title="1">var machine models.Machine
+        if err := config.DB.First(&amp;machine, "id = ?", req.MachineID).Error; err != nil </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusNotFound, map[string]string{"error": "Machine not found"})
+        }</span>
+
+        <span class="cov8" title="1">if machine.ListingType == "sale" </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "This machine is not for rent"})
+        }</span>
+
+        // 3. Parse Dates &amp; Calculate Cost
+        <span class="cov8" title="1">layout := "2006-01-02"
+        start, err := time.Parse(layout, req.StartDate)
+        if err != nil </span><span class="cov0" title="0">{ return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid start_date format"}) }</span>
+        <span class="cov8" title="1">end, err := time.Parse(layout, req.EndDate)
+        if err != nil </span><span class="cov0" title="0">{ return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid end_date format"}) }</span>
+
+        <span class="cov8" title="1">if end.Before(start) </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "End date cannot be before start date"})
+        }</span>
+
+        <span class="cov8" title="1">days := math.Ceil(end.Sub(start).Hours() / 24)
+        if days &lt; 1 </span><span class="cov0" title="0">{ days = 1 }</span>
+
+        <span class="cov8" title="1">rentalFee := days * machine.RentalPricePerDay
+        platformFee := rentalFee * 0.05 // 5% Commission
+
+        // 4. Create Rental Record
+        rental := models.Rental{
+                MachineID:       machine.ID,
+                RenterID:        renterID,
+                StartDate:       start,
+                EndDate:         end,
+                TotalAmount:     rentalFee,
+                SecurityDeposit: machine.SecurityDeposit,
+                PlatformFee:     platformFee,
+                Status:          "pending",
+        }
+
+        if err := config.DB.Create(&amp;rental).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create rental request"})
+        }</span>
+
+        <span class="cov8" title="1">return c.JSON(http.StatusCreated, rental)</span>
+}
+
+// GetMyRentals - GET /api/rentals/my (As Renter)
+func GetMyRentals(c echo.Context) error <span class="cov8" title="1">{
+        renterID, _ := getUserIDFromToken(c)
+        var rentals []models.Rental
+        
+        // Preload Machine details so the UI can show titles/images
+        if err := config.DB.Preload("Machine").Where("renter_id = ?", renterID).Find(&amp;rentals).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch rentals"})
+        }</span>
+        
+        <span class="cov8" title="1">return c.JSON(http.StatusOK, rentals)</span>
+}
+
+// GetOwnerRentals - GET /api/rentals/manage (As Owner)
+func GetOwnerRentals(c echo.Context) error <span class="cov8" title="1">{
+        ownerID, _ := getUserIDFromToken(c)
+        
+        // Complex Query: Find rentals where the Machine belongs to this Owner
+        var rentals []models.Rental
+        err := config.DB.Preload("Machine").
+                Joins("JOIN machines ON machines.id = rentals.machine_id").
+                Where("machines.seller_id = ?", ownerID).
+                Find(&amp;rentals).Error
+
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch requests"})
+        }</span>
+
+        <span class="cov8" title="1">return c.JSON(http.StatusOK, rentals)</span>
+}
+
+// UpdateRentalStatus - PUT /api/rentals/:id/status
+// Payload: {"status": "approved" | "rejected" | "completed"}
+func UpdateRentalStatus(c echo.Context) error <span class="cov8" title="1">{
+        rentalID := c.Param("id")
+        
+        type StatusUpdate struct {
+                Status string `json:"status"`
+        }
+        var req StatusUpdate
+        if err := c.Bind(&amp;req); err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+        }</span>
+
+        // Get User (Owner)
+        <span class="cov8" title="1">ownerID, _ := getUserIDFromToken(c)
+
+        // Verify that the user requesting this update OWNS the machine involved
+        var rental models.Rental
+        if err := config.DB.Preload("Machine").First(&amp;rental, "id = ?", rentalID).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusNotFound, map[string]string{"error": "Rental not found"})
+        }</span>
+
+        // Ownership Check using type casting to uint if needed
+        <span class="cov8" title="1">if rental.Machine.SellerID != ownerID </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusForbidden, map[string]string{"error": "You are not the owner of this machine"})
+        }</span>
+
+        // Update Status
+        <span class="cov8" title="1">rental.Status = req.Status
+        config.DB.Save(&amp;rental)
+
+        return c.JSON(http.StatusOK, rental)</span>
 }</pre>
 		
 		</div>
