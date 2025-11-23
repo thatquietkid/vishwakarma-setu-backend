@@ -25,7 +25,8 @@ func ConnectDatabase() *gorm.DB {
 
 	DB = database
 	fmt.Println("✅ Connected to Database")
-
+	DB.Migrator().DropTable(&models.Machine{})
+	// fmt.Println("🔄 Running Migrations...")
 	err = DB.AutoMigrate(&models.Machine{})
 	if err != nil {
 		log.Fatalf("❌ AutoMigrate failed: %v", err)

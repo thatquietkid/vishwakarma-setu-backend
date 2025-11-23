@@ -91,15 +91,30 @@ These routes **do not require authentication**.
 
 | Method | Endpoint            | Description                       |
 | ------ | ------------------- | --------------------------------- |
-| GET    | `/health`       | Check server status               |
-| GET    | `/api/machines`     | Get all machine listings          |
+| GET    | `/health`           | Check server status               |
+| GET    | `/api/machines`     | Get all machine listings (supports search & filtering) |
 | GET    | `/api/machines/:id` | Get details of a specific machine |
 
 ### Query Parameters for `/api/machines`
 
-| Query | Description                             | Example                   |
-| ----- | --------------------------------------- | ------------------------- |
-| type  | Filter by listing type (`sale`, `rent`) | `/api/machines?type=rent` |
+| Query       | Description                                                                 | Example                           |
+| ----------- | --------------------------------------------------------------------------- | --------------------------------- |
+| q           | Keyword search across title & description (case-insensitive, partial match) | `/api/machines?q=haas`            |
+| category    | Exact category filter (e.g., `CNC Mill`, `Lathe`)                            | `/api/machines?category=Lathe`    |
+| manufacturer| Exact manufacturer filter                                                   | `/api/machines?manufacturer=Haas` |
+| location    | Location filter (case-insensitive, substring match)                         | `/api/machines?location=Faridabad`|
+| type        | Listing type: `sale`, `rent`, or `both` (filters to matching listings)      | `/api/machines?type=rent`         |
+| min_price   | Minimum sale price (applies to sale listings)                               | `/api/machines?min_price=100000`  |
+| max_price   | Maximum sale price                                                           | `/api/machines?max_price=500000`  |
+| sort        | Sorting: `price_asc`, `price_desc`, `oldest`, `newest` (default: `newest`)  | `/api/machines?sort=price_asc`    |
+| page        | Page number for pagination (default: 1)                                      | `/api/machines?page=2`            |
+| limit       | Items per page (default: 10)                                                 | `/api/machines?limit=20`          |
+
+Response includes pagination metadata:
+- data: array of machine objects
+- total: total number of matched listings
+- page, limit
+- total_pages
 
 ---
 
@@ -123,7 +138,9 @@ Authorization: Bearer <your_jwt_token>
 
 ### 📌 Create Machine Example
 
-**POST** `/api/machines`
+**POST** `/api/machines` (Protected - requires Authorization header)
+
+Request body (example):
 
 ```json
 {
@@ -132,10 +149,13 @@ Authorization: Bearer <your_jwt_token>
     "manufacturer": "Haas Automation",
     "model_number": "VF-2",
     "year_of_manufacture": 2019,
+    "category": "CNC Mill",
+    "location": "Faridabad, Haryana",
     "listing_type": "both",
     "status": "listed",
     "price_for_sale": 2500000,
     "rental_price_per_month": 120000,
+    "rental_price_per_day": 6000,
     "security_deposit": 200000,
     "specs": {
         "spindle_speed": "8100 RPM",
@@ -143,6 +163,11 @@ Authorization: Bearer <your_jwt_token>
     }
 }
 ```
+
+Notes:
+- seller_id is taken from the authenticated JWT token; do not include it in the request.
+- specs is stored as JSON (flexible key-value spec object).
+- For rental listings, use `listing_type` = `rent` or `both`. Price filters (`min_price`/`max_price`) apply to sale price.
 
 ---
 
@@ -157,7 +182,7 @@ vishwakarma-setu-backend/
 ├── middleware/
 │   └── auth.go          # JWT validation middleware configuration
 ├── models/
-│   └── machine.go       # Gorm model definition for 'machines'
+│   └── machines.go      # Gorm model definition for 'machines' (contains category, location, specs JSON, prices)
 ├── routes/
 │   └── routes.go        # API route definitions & grouping
 ├── .env                 # Environment variables (ignored in Git)
