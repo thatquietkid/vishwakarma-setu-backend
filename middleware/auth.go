@@ -13,7 +13,7 @@ func JWTMiddleware() echo.MiddlewareFunc {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		// Fallback or panic in production
-		secret = "your-secret-key" 
+		secret = "your-secret-key"
 	}
 
 	config := echojwt.Config{

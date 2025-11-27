@@ -19,7 +19,7 @@ func TestHandlers(t *testing.T) {
 		expectedKey   string
 		expectedValue string
 	}{
-		{"Index", Index, http.StatusOK, "message", "Welcome to the Student Dashboard API"},
+		{"Index", Index, http.StatusOK, "message", "Welcome to Vishwakarma Setu API"},
 		{"HealthCheck", HealthCheck, http.StatusOK, "status", "OK"},
 		{"NotFound", NotFound, http.StatusNotFound, "error", "Resource not found"},
 		{"InternalServerError", InternalServerError, http.StatusInternalServerError, "error", "Internal server error"},

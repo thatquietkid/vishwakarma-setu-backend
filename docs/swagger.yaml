@@ -1,5 +1,44 @@
 basePath: /api
 definitions:
+  controllers.InspectionRequest:
+    properties:
+      machine_id:
+        type: string
+      media_urls:
+        description: Array of image URLs
+        items:
+          type: string
+        type: array
+      report_data:
+        additionalProperties: true
+        description: Flexible Key-Value pairs
+        type: object
+      report_type:
+        description: listing, check_out, check_in
+        type: string
+      summary:
+        type: string
+      verdict:
+        type: string
+    type: object
+  controllers.MaintenanceRequest:
+    properties:
+      cost:
+        type: number
+      description:
+        type: string
+      document_url:
+        type: string
+      machine_id:
+        type: string
+      service_date:
+        description: YYYY-MM-DD
+        type: string
+      technician:
+        type: string
+      type:
+        type: string
+    type: object
   controllers.RentalRequest:
     properties:
       end_date:
@@ -21,7 +60,107 @@ definitions:
         example: approved
         type: string
     type: object
+  controllers.UploadResponse:
+    properties:
+      url:
+        type: string
+    type: object
+  models.InspectionReport:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      inspection_date:
+        type: string
+      inspector_id:
+        type: integer
+      machine_id:
+        type: string
+      media_urls:
+        description: 'FIX: Added swaggertype:"array,string"'
+        items:
+          type: string
+        type: array
+      report_data:
+        description: 'FIX: Added swaggertype:"object"'
+        type: object
+      report_type:
+        type: string
+      summary:
+        type: string
+      updated_at:
+        type: string
+      verdict:
+        type: string
+    type: object
   models.Machine:
+    properties:
+      category:
+        description: New Fields for Search
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      listing_type:
+        description: sale, rent, both
+        type: string
+      location:
+        description: e.g., "Faridabad, Haryana"
+        type: string
+      manufacturer:
+        type: string
+      model_number:
+        type: string
+      price_for_sale:
+        type: number
+      rental_price_per_day:
+        type: number
+      rental_price_per_month:
+        type: number
+      security_deposit:
+        type: number
+      seller_id:
+        type: integer
+      specs:
+        description: 'UPDATED: Added swaggertype:"object" to fix Swagger generation'
+        type: object
+      status:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      year_of_manufacture:
+        type: integer
+    type: object
+  models.MaintenanceRecord:
+    properties:
+      cost:
+        type: number
+      created_at:
+        type: string
+      description:
+        type: string
+      document_url:
+        description: 'Optional: Link to invoice/document image'
+        type: string
+      id:
+        type: string
+      machine_id:
+        type: string
+      service_date:
+        type: string
+      technician:
+        type: string
+      type:
+        description: e.g., "Routine", "Repair", "Replacement"
+        type: string
+      updated_at:
+        type: string
     type: object
   models.Rental:
     properties:
@@ -122,6 +261,37 @@ paths:
       summary: Health Check
       tags:
       - General
+  /inspections:
+    post:
+      consumes:
+      - application/json
+      description: Submit a verification report with media URLs. Only Inspectors/Admins
+        should ideally do this.
+      parameters:
+      - description: Inspection Data
+        in: body
+        name: report
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.InspectionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.InspectionReport'
+        "400":
+          description: Invalid Input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Submit an inspection report
+      tags:
+      - Inspection
   /internal-server-error:
     get:
       produces:
@@ -141,7 +311,7 @@ paths:
       description: Retrieve a list of machines with optional filtering, sorting, and
         pagination.
       parameters:
-      - description: Search query (Title/Description)
+      - description: Search query
         in: query
         name: q
         type: string
@@ -161,23 +331,15 @@ paths:
         in: query
         name: type
         type: string
-      - description: Minimum Price (Sale)
-        in: query
-        name: min_price
-        type: number
-      - description: Maximum Price (Sale)
-        in: query
-        name: max_price
-        type: number
       - description: Sort order (price_asc, price_desc, oldest)
         in: query
         name: sort
         type: string
-      - description: Page number (default 1)
+      - description: Page number
         in: query
         name: page
         type: integer
-      - description: Items per page (default 10)
+      - description: Items per page
         in: query
         name: limit
         type: integer
@@ -185,15 +347,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Returns data array and pagination meta
+          description: OK
           schema:
             additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
             type: object
       summary: Get all machine listings
       tags:
@@ -201,8 +357,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Register a new machine for sale or rent. Requires a valid Seller
-        JWT token.
+      description: Register a new machine for sale or rent. Requires Seller or Admin
+        Role.
       parameters:
       - description: Machine Details
         in: body
@@ -229,6 +385,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "403":
+          description: Forbidden (Buyers cannot list)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       security:
       - BearerAuth: []
       summary: Create a new machine listing
@@ -236,8 +398,7 @@ paths:
       - Machines
   /machines/{id}:
     delete:
-      description: Permanently remove a machine listing. Only the owner can perform
-        this.
+      description: Remove a listing. Only Owner or Admin can perform this.
       parameters:
       - description: Machine ID
         in: path
@@ -248,7 +409,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Success message
+          description: Success
           schema:
             additionalProperties:
               type: string
@@ -259,53 +420,22 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "404":
-          description: Machine not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
       security:
       - BearerAuth: []
       summary: Delete a listing
       tags:
       - Machines
-    get:
-      description: Retrieve full details of a specific machine listing.
-      parameters:
-      - description: Machine ID (UUID)
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Machine'
-        "404":
-          description: Machine not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get a machine by ID
-      tags:
-      - Machines
     put:
       consumes:
       - application/json
-      description: Update details of an existing machine listing. Only the owner can
-        perform this.
+      description: Update details. Only Owner or Admin can perform this.
       parameters:
       - description: Machine ID
         in: path
         name: id
         required: true
         type: string
-      - description: Updated Machine Data
+      - description: Updated Data
         in: body
         name: machine
         required: true
@@ -324,17 +454,88 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "404":
-          description: Machine not found
+      security:
+      - BearerAuth: []
+      summary: Update a listing
+      tags:
+      - Machines
+  /machines/{machine_id}/inspection:
+    get:
+      description: Retrieve the latest inspection report for a specific machine.
+      parameters:
+      - description: Machine UUID
+        in: path
+        name: machine_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.InspectionReport'
+      summary: Get inspection report for a machine
+      tags:
+      - Inspection
+  /machines/{machine_id}/maintenance:
+    get:
+      description: Retrieve full service history for a machine.
+      parameters:
+      - description: Machine ID
+        in: path
+        name: machine_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.MaintenanceRecord'
+            type: array
+      summary: Get maintenance history
+      tags:
+      - Maintenance
+  /maintenance:
+    post:
+      consumes:
+      - application/json
+      description: Add a service history log for a machine. Only the owner can do
+        this.
+      parameters:
+      - description: Maintenance Data
+        in: body
+        name: record
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.MaintenanceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.MaintenanceRecord'
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Not authorized
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - BearerAuth: []
-      summary: Update a listing
+      summary: Add a maintenance record
       tags:
-      - Machines
+      - Maintenance
   /not-found:
     get:
       produces:
@@ -471,6 +672,40 @@ paths:
       summary: Unauthorized Handler
       tags:
       - Errors
+  /upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload an image file (jpg, png, jpeg) and get a local URL. Max
+        size 5MB.
+      parameters:
+      - description: Image file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/controllers.UploadResponse'
+        "400":
+          description: Invalid file
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upload an image
+      tags:
+      - Utility
 securityDefinitions:
   BearerAuth:
     in: header

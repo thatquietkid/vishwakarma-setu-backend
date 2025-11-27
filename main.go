@@ -12,14 +12,14 @@ import (
 	_ "github.com/vishwakarma-setu-backend/docs" // Import generated docs
 )
 
-// @title Vishwakarma Setu API
-// @version 1.0
-// @description Backend API for Vishwakarma Setu B2B Marketplace.
-// @host localhost:1324
-// @BasePath /api
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
+// @title						Vishwakarma Setu API
+// @version					1.0
+// @description				Backend API for Vishwakarma Setu B2B Marketplace.
+// @host						localhost:1324
+// @BasePath					/api
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
 func main() {
 	// Load env
 	_ = godotenv.Load()

@@ -105,6 +105,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/inspections": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Submit a verification report with media URLs. Only Inspectors/Admins should ideally do this.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inspection"
+                ],
+                "summary": "Submit an inspection report",
+                "parameters": [
+                    {
+                        "description": "Inspection Data",
+                        "name": "report",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.InspectionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.InspectionReport"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/internal-server-error": {
             "get": {
                 "produces": [
@@ -140,7 +188,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Search query (Title/Description)",
+                        "description": "Search query",
                         "name": "q",
                         "in": "query"
                     },
@@ -169,18 +217,6 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "number",
-                        "description": "Minimum Price (Sale)",
-                        "name": "min_price",
-                        "in": "query"
-                    },
-                    {
-                        "type": "number",
-                        "description": "Maximum Price (Sale)",
-                        "name": "max_price",
-                        "in": "query"
-                    },
-                    {
                         "type": "string",
                         "description": "Sort order (price_asc, price_desc, oldest)",
                         "name": "sort",
@@ -188,32 +224,23 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Page number (default 1)",
+                        "description": "Page number",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page (default 10)",
+                        "description": "Items per page",
                         "name": "limit",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Returns data array and pagination meta",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
                         }
                     }
                 }
@@ -224,7 +251,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Register a new machine for sale or rent. Requires a valid Seller JWT token.",
+                "description": "Register a new machine for sale or rent. Requires Seller or Admin Role.",
                 "consumes": [
                     "application/json"
                 ],
@@ -270,38 +297,9 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
-                    }
-                }
-            }
-        },
-        "/machines/{id}": {
-            "get": {
-                "description": "Retrieve full details of a specific machine listing.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Machines"
-                ],
-                "summary": "Get a machine by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Machine ID (UUID)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Machine"
-                        }
                     },
-                    "404": {
-                        "description": "Machine not found",
+                    "403": {
+                        "description": "Forbidden (Buyers cannot list)",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -310,14 +308,16 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/machines/{id}": {
             "put": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update details of an existing machine listing. Only the owner can perform this.",
+                "description": "Update details. Only Owner or Admin can perform this.",
                 "consumes": [
                     "application/json"
                 ],
@@ -337,7 +337,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Updated Machine Data",
+                        "description": "Updated Data",
                         "name": "machine",
                         "in": "body",
                         "required": true,
@@ -361,15 +361,6 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
-                    },
-                    "404": {
-                        "description": "Machine not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
                     }
                 }
             },
@@ -379,7 +370,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Permanently remove a machine listing. Only the owner can perform this.",
+                "description": "Remove a listing. Only Owner or Admin can perform this.",
                 "produces": [
                     "application/json"
                 ],
@@ -398,7 +389,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success message",
+                        "description": "Success",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -414,9 +405,118 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/machines/{machine_id}/inspection": {
+            "get": {
+                "description": "Retrieve the latest inspection report for a specific machine.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inspection"
+                ],
+                "summary": "Get inspection report for a machine",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Machine UUID",
+                        "name": "machine_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.InspectionReport"
+                        }
+                    }
+                }
+            }
+        },
+        "/machines/{machine_id}/maintenance": {
+            "get": {
+                "description": "Retrieve full service history for a machine.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Maintenance"
+                ],
+                "summary": "Get maintenance history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Machine ID",
+                        "name": "machine_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.MaintenanceRecord"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/maintenance": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Add a service history log for a machine. Only the owner can do this.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Maintenance"
+                ],
+                "summary": "Add a maintenance record",
+                "parameters": [
+                    {
+                        "description": "Maintenance Data",
+                        "name": "record",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.MaintenanceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.MaintenanceRecord"
+                        }
                     },
-                    "404": {
-                        "description": "Machine not found",
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not authorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -638,9 +738,116 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/upload": {
+            "post": {
+                "description": "Upload an image file (jpg, png, jpeg) and get a local URL. Max size 5MB.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Utility"
+                ],
+                "summary": "Upload an image",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Image file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.UploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid file",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "controllers.InspectionRequest": {
+            "type": "object",
+            "properties": {
+                "machine_id": {
+                    "type": "string"
+                },
+                "media_urls": {
+                    "description": "Array of image URLs",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "report_data": {
+                    "description": "Flexible Key-Value pairs",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "report_type": {
+                    "description": "listing, check_out, check_in",
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "verdict": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.MaintenanceRequest": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "document_url": {
+                    "type": "string"
+                },
+                "machine_id": {
+                    "type": "string"
+                },
+                "service_date": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "technician": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "controllers.RentalRequest": {
             "type": "object",
             "properties": {
@@ -670,8 +877,156 @@ const docTemplate = `{
                 }
             }
         },
+        "controllers.UploadResponse": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.InspectionReport": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "inspection_date": {
+                    "type": "string"
+                },
+                "inspector_id": {
+                    "type": "integer"
+                },
+                "machine_id": {
+                    "type": "string"
+                },
+                "media_urls": {
+                    "description": "FIX: Added swaggertype:\"array,string\"",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "report_data": {
+                    "description": "FIX: Added swaggertype:\"object\"",
+                    "type": "object"
+                },
+                "report_type": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "verdict": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Machine": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "category": {
+                    "description": "New Fields for Search",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "listing_type": {
+                    "description": "sale, rent, both",
+                    "type": "string"
+                },
+                "location": {
+                    "description": "e.g., \"Faridabad, Haryana\"",
+                    "type": "string"
+                },
+                "manufacturer": {
+                    "type": "string"
+                },
+                "model_number": {
+                    "type": "string"
+                },
+                "price_for_sale": {
+                    "type": "number"
+                },
+                "rental_price_per_day": {
+                    "type": "number"
+                },
+                "rental_price_per_month": {
+                    "type": "number"
+                },
+                "security_deposit": {
+                    "type": "number"
+                },
+                "seller_id": {
+                    "type": "integer"
+                },
+                "specs": {
+                    "description": "UPDATED: Added swaggertype:\"object\" to fix Swagger generation",
+                    "type": "object"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "year_of_manufacture": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.MaintenanceRecord": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "document_url": {
+                    "description": "Optional: Link to invoice/document image",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "machine_id": {
+                    "type": "string"
+                },
+                "service_date": {
+                    "type": "string"
+                },
+                "technician": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "e.g., \"Routine\", \"Repair\", \"Replacement\"",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
         },
         "models.Rental": {
             "type": "object",
@@ -736,7 +1091,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
     Version:          "1.0",
-    Host:             "localhost:1326",
+    Host:             "localhost:1324",
     BasePath:         "/api",
     Schemes:          []string{},
     Title:            "Vishwakarma Setu API",

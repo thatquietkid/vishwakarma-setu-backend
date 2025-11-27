@@ -1,0 +1,936 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>controllers: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/vishwakarma-setu-backend/controllers/index.go (100.0%)</option>
+				
+				<option value="file1">github.com/vishwakarma-setu-backend/controllers/inspection.go (81.8%)</option>
+				
+				<option value="file2">github.com/vishwakarma-setu-backend/controllers/listing.go (82.8%)</option>
+				
+				<option value="file3">github.com/vishwakarma-setu-backend/controllers/maintenance.go (81.0%)</option>
+				
+				<option value="file4">github.com/vishwakarma-setu-backend/controllers/rentals.go (77.0%)</option>
+				
+				<option value="file5">github.com/vishwakarma-setu-backend/controllers/upload.go (80.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package controllers
+
+import (
+        "net/http"
+
+        "github.com/labstack/echo/v4"
+)
+
+// Index godoc
+// @Summary Welcome Message
+// @Description Returns a welcome message for the API.
+// @Tags General
+// @Produce json
+// @Success 200 {object} map[string]string
+// @Router / [get]
+func Index(c echo.Context) error <span class="cov8" title="1">{
+        return c.JSON(http.StatusOK, map[string]string{
+                "message": "Welcome to Vishwakarma Setu API",
+        })
+}</span>
+
+// HealthCheck godoc
+// @Summary Health Check
+// @Description Checks if the backend server is running.
+// @Tags General
+// @Produce json
+// @Success 200 {object} map[string]string
+// @Router /health [get]
+func HealthCheck(c echo.Context) error <span class="cov8" title="1">{
+        return c.JSON(http.StatusOK, map[string]string{
+                "status": "OK",
+        })
+}</span>
+
+// NotFound godoc
+// @Summary Not Found Handler
+// @Tags Errors
+// @Produce json
+// @Success 404 {object} map[string]string
+// @Router /not-found [get]
+func NotFound(c echo.Context) error <span class="cov8" title="1">{
+        return c.JSON(http.StatusNotFound, map[string]string{
+                "error": "Resource not found",
+        })
+}</span>
+
+// InternalServerError godoc
+// @Summary Internal Server Error Handler
+// @Tags Errors
+// @Produce json
+// @Success 500 {object} map[string]string
+// @Router /internal-server-error [get]
+func InternalServerError(c echo.Context) error <span class="cov8" title="1">{
+        return c.JSON(http.StatusInternalServerError, map[string]string{
+                "error": "Internal server error",
+        })
+}</span>
+
+// BadRequest godoc
+// @Summary Bad Request Handler
+// @Tags Errors
+// @Produce json
+// @Success 400 {object} map[string]string
+// @Router /bad-request [get]
+func BadRequest(c echo.Context) error <span class="cov8" title="1">{
+        return c.JSON(http.StatusBadRequest, map[string]string{
+                "error": "Bad request",
+        })
+}</span>
+
+// Unauthorized godoc
+// @Summary Unauthorized Handler
+// @Tags Errors
+// @Produce json
+// @Success 401 {object} map[string]string
+// @Router /unauthorized [get]
+func Unauthorized(c echo.Context) error <span class="cov8" title="1">{
+        return c.JSON(http.StatusUnauthorized, map[string]string{
+                "error": "Unauthorized access",
+        })
+}</span>
+
+// Forbidden godoc
+// @Summary Forbidden Handler
+// @Tags Errors
+// @Produce json
+// @Success 403 {object} map[string]string
+// @Router /forbidden [get]
+func Forbidden(c echo.Context) error <span class="cov8" title="1">{
+        return c.JSON(http.StatusForbidden, map[string]string{
+                "error": "Forbidden access",
+        })
+}</pre>
+		
+		<pre class="file" id="file1" style="display: none">package controllers
+
+import (
+        "encoding/json"
+        "net/http"
+        "time"
+
+        "github.com/labstack/echo/v4"
+        "github.com/vishwakarma-setu-backend/config"
+        "github.com/vishwakarma-setu-backend/models"
+        "gorm.io/datatypes"
+)
+
+// InspectionRequest payload
+type InspectionRequest struct {
+        MachineID  string                 `json:"machine_id"`
+        ReportType string                 `json:"report_type"` // listing, check_out, check_in
+        Verdict    string                 `json:"verdict"`
+        Summary    string                 `json:"summary"`
+        ReportData map[string]interface{} `json:"report_data"` // Flexible Key-Value pairs
+        MediaURLs  []string               `json:"media_urls"`  // Array of image URLs
+}
+
+// CreateInspectionReport godoc
+// @Summary Submit an inspection report
+// @Description Submit a verification report with media URLs. Only Inspectors/Admins should ideally do this.
+// @Tags Inspection
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param report body InspectionRequest true "Inspection Data"
+// @Success 201 {object} models.InspectionReport
+// @Failure 400 {object} map[string]string "Invalid Input"
+// @Router /inspections [post]
+func CreateInspectionReport(c echo.Context) error <span class="cov8" title="1">{
+        var req InspectionRequest
+        if err := c.Bind(&amp;req); err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+        }</span>
+
+        // FIX: Use the new shared helper from listing.go
+        <span class="cov8" title="1">user, err := getUserClaims(c)
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+        }</span>
+
+        // Optional: Enforce Role (e.g., only inspectors or admins)
+        // if user.Role != "inspector" &amp;&amp; user.Role != "admin" {
+        //     return c.JSON(http.StatusForbidden, map[string]string{"error": "Only inspectors can submit reports"})
+        // }
+
+        // 1. Verify Machine Exists
+        <span class="cov8" title="1">var machine models.Machine
+        if err := config.DB.First(&amp;machine, "id = ?", req.MachineID).Error; err != nil </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusNotFound, map[string]string{"error": "Machine not found"})
+        }</span>
+
+        // 2. Serialize JSON fields
+        <span class="cov8" title="1">reportDataJSON, _ := json.Marshal(req.ReportData)
+        mediaURLsJSON, _ := json.Marshal(req.MediaURLs)
+
+        report := models.InspectionReport{
+                MachineID:      machine.ID,
+                InspectorID:    user.ID, // Use ID from claims
+                ReportType:     req.ReportType,
+                InspectionDate: time.Now(),
+                Verdict:        req.Verdict,
+                Summary:        req.Summary,
+                ReportData:     datatypes.JSON(reportDataJSON),
+                MediaURLs:      datatypes.JSON(mediaURLsJSON),
+        }
+
+        if err := config.DB.Create(&amp;report).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to save report"})
+        }</span>
+
+        // 3. Optional: Update Machine Status to 'verified' if it was pending
+        <span class="cov8" title="1">if machine.Status == "pending_inspection" &amp;&amp; req.Verdict != "Fail" </span><span class="cov0" title="0">{
+                config.DB.Model(&amp;machine).Update("status", "verified")
+        }</span>
+
+        <span class="cov8" title="1">return c.JSON(http.StatusCreated, report)</span>
+}
+
+// GetMachineInspection godoc
+// @Summary Get inspection report for a machine
+// @Description Retrieve the latest inspection report for a specific machine.
+// @Tags Inspection
+// @Produce json
+// @Param machine_id path string true "Machine UUID"
+// @Success 200 {object} models.InspectionReport
+// @Router /machines/{machine_id}/inspection [get]
+func GetMachineInspection(c echo.Context) error <span class="cov8" title="1">{
+        machineID := c.Param("machine_id")
+
+        var report models.InspectionReport
+        // Get the most recent report for this machine
+        if err := config.DB.Where("machine_id = ?", machineID).Order("created_at desc").First(&amp;report).Error; err != nil </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusNotFound, map[string]string{"error": "No inspection report found for this machine"})
+        }</span>
+
+        <span class="cov8" title="1">return c.JSON(http.StatusOK, report)</span>
+}</pre>
+		
+		<pre class="file" id="file2" style="display: none">package controllers
+
+import (
+        "net/http"
+        "strconv"
+        "strings"
+
+        "github.com/golang-jwt/jwt/v5"
+        "github.com/labstack/echo/v4"
+        "github.com/vishwakarma-setu-backend/config"
+        "github.com/vishwakarma-setu-backend/models"
+)
+
+// Helper struct for token data
+type UserClaims struct {
+        ID   uint
+        Role string
+}
+
+// Updated Helper to extract BOTH ID and Role from JWT
+func getUserClaims(c echo.Context) (*UserClaims, error) <span class="cov8" title="1">{
+        userToken := c.Get("user").(*jwt.Token)
+        claims := userToken.Claims.(*jwt.MapClaims)
+
+        // Extract User ID
+        // JSON numbers are float64 by default
+        idFloat, okID := (*claims)["user_id"].(float64)
+        
+        // Extract Role
+        role, okRole := (*claims)["role"].(string)
+
+        if !okID || !okRole </span><span class="cov0" title="0">{
+                return nil, echo.NewHTTPError(http.StatusUnauthorized, "Invalid token claims: missing user_id or role")
+        }</span>
+
+        <span class="cov8" title="1">return &amp;UserClaims{
+                ID:   uint(idFloat),
+                Role: role,
+        }, nil</span>
+}
+
+// CreateListing godoc
+// @Summary Create a new machine listing
+// @Description Register a new machine for sale or rent. Requires Seller or Admin Role.
+// @Tags Machines
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param machine body models.Machine true "Machine Details"
+// @Success 201 {object} models.Machine
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 403 {object} map[string]string "Forbidden (Buyers cannot list)"
+// @Router /machines [post]
+func CreateListing(c echo.Context) error <span class="cov8" title="1">{
+        var machine models.Machine
+        if err := c.Bind(&amp;machine); err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input data"})
+        }</span>
+
+        <span class="cov8" title="1">user, err := getUserClaims(c)
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+        }</span>
+
+        // RBAC Check: Only Sellers or Admins can create listings
+        <span class="cov8" title="1">if user.Role != "seller" &amp;&amp; user.Role != "admin" </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusForbidden, map[string]string{"error": "Only sellers can list machines"})
+        }</span>
+
+        <span class="cov8" title="1">machine.SellerID = user.ID
+
+        if err := config.DB.Create(&amp;machine).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not create listing: " + err.Error()})
+        }</span>
+
+        <span class="cov8" title="1">return c.JSON(http.StatusCreated, machine)</span>
+}
+
+// GetAllListings godoc
+// @Summary Get all machine listings
+// @Description Retrieve a list of machines with optional filtering, sorting, and pagination.
+// @Tags Machines
+// @Produce json
+// @Param q query string false "Search query"
+// @Param category query string false "Filter by Category"
+// @Param manufacturer query string false "Filter by Manufacturer"
+// @Param location query string false "Filter by Location"
+// @Param type query string false "Filter by Listing Type (sale, rent)"
+// @Param sort query string false "Sort order (price_asc, price_desc, oldest)"
+// @Param page query int false "Page number"
+// @Param limit query int false "Items per page"
+// @Success 200 {object} map[string]interface{}
+// @Router /machines [get]
+func GetAllListings(c echo.Context) error <span class="cov8" title="1">{
+        var machines []models.Machine
+        query := config.DB.Model(&amp;models.Machine{})
+
+        // 1. Keyword Search
+        if q := c.QueryParam("q"); q != "" </span><span class="cov8" title="1">{
+                searchTerm := "%" + strings.ToLower(q) + "%"
+                query = query.Where("LOWER(title) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?)", searchTerm, searchTerm)
+        }</span>
+
+        // 2. Exact Filters
+        <span class="cov8" title="1">if category := c.QueryParam("category"); category != "" </span><span class="cov8" title="1">{
+                query = query.Where("category = ?", category)
+        }</span>
+        <span class="cov8" title="1">if manufacturer := c.QueryParam("manufacturer"); manufacturer != "" </span><span class="cov0" title="0">{
+                query = query.Where("manufacturer = ?", manufacturer)
+        }</span>
+        <span class="cov8" title="1">if location := c.QueryParam("location"); location != "" </span><span class="cov0" title="0">{
+                query = query.Where("LOWER(location) LIKE LOWER(?)", "%"+location+"%")
+        }</span>
+
+        // 3. Listing Type Filter
+        <span class="cov8" title="1">if listingType := c.QueryParam("type"); listingType != "" </span><span class="cov8" title="1">{
+                if listingType == "sale" </span><span class="cov8" title="1">{
+                        query = query.Where("listing_type IN (?, ?)", "sale", "both")
+                }</span> else<span class="cov8" title="1"> if listingType == "rent" </span><span class="cov8" title="1">{
+                        query = query.Where("listing_type IN (?, ?)", "rent", "both")
+                }</span>
+        }
+
+        // 4. Price Range Filter
+        <span class="cov8" title="1">if minPrice := c.QueryParam("min_price"); minPrice != "" </span><span class="cov0" title="0">{
+                query = query.Where("price_for_sale &gt;= ?", minPrice)
+        }</span>
+        <span class="cov8" title="1">if maxPrice := c.QueryParam("max_price"); maxPrice != "" </span><span class="cov0" title="0">{
+                query = query.Where("price_for_sale &lt;= ?", maxPrice)
+        }</span>
+
+        // 5. Sorting
+        <span class="cov8" title="1">sortParam := c.QueryParam("sort")
+        switch sortParam </span>{
+        case "price_asc":<span class="cov8" title="1">
+                query = query.Order("price_for_sale asc")</span>
+        case "price_desc":<span class="cov0" title="0">
+                query = query.Order("price_for_sale desc")</span>
+        case "oldest":<span class="cov0" title="0">
+                query = query.Order("created_at asc")</span>
+        default:<span class="cov8" title="1">
+                query = query.Order("created_at desc")</span>
+        }
+
+        // 6. Pagination
+        <span class="cov8" title="1">page, _ := strconv.Atoi(c.QueryParam("page"))
+        limit, _ := strconv.Atoi(c.QueryParam("limit"))
+        if page &lt;= 0 </span><span class="cov8" title="1">{ page = 1 }</span>
+        <span class="cov8" title="1">if limit &lt;= 0 </span><span class="cov8" title="1">{ limit = 10 }</span>
+        <span class="cov8" title="1">offset := (page - 1) * limit
+
+        var total int64
+        query.Count(&amp;total) 
+        
+        if err := query.Offset(offset).Limit(limit).Find(&amp;machines).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not fetch listings"})
+        }</span>
+
+        <span class="cov8" title="1">return c.JSON(http.StatusOK, map[string]interface{}{
+                "data":       machines,
+                "total":      total,
+                "page":       page,
+                "limit":      limit,
+                "total_pages": (total + int64(limit) - 1) / int64(limit),
+        })</span>
+}
+
+// GetListingByID - GET /api/machines/:id
+func GetListingByID(c echo.Context) error <span class="cov8" title="1">{
+        id := c.Param("id")
+        var machine models.Machine
+        if err := config.DB.First(&amp;machine, "id = ?", id).Error; err != nil </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusNotFound, map[string]string{"error": "Machine not found"})
+        }</span>
+        <span class="cov8" title="1">return c.JSON(http.StatusOK, machine)</span>
+}
+
+// UpdateListing godoc
+// @Summary Update a listing
+// @Description Update details. Only Owner or Admin can perform this.
+// @Tags Machines
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Machine ID"
+// @Param machine body models.Machine true "Updated Data"
+// @Success 200 {object} models.Machine
+// @Failure 403 {object} map[string]string "Not authorized"
+// @Router /machines/{id} [put]
+func UpdateListing(c echo.Context) error <span class="cov8" title="1">{
+        id := c.Param("id")
+        var machine models.Machine
+
+        if err := config.DB.First(&amp;machine, "id = ?", id).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusNotFound, map[string]string{"error": "Machine not found"})
+        }</span>
+
+        <span class="cov8" title="1">user, err := getUserClaims(c)
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid token"})
+        }</span>
+
+        // RBAC: Allow owner OR admin to update
+        <span class="cov8" title="1">if machine.SellerID != user.ID &amp;&amp; user.Role != "admin" </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusForbidden, map[string]string{"error": "You are not authorized to update this listing"})
+        }</span>
+
+        <span class="cov8" title="1">var updateData models.Machine
+        if err := c.Bind(&amp;updateData); err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+        }</span>
+
+        <span class="cov8" title="1">machine.Title = updateData.Title
+        machine.Description = updateData.Description
+        machine.Category = updateData.Category       
+        machine.Location = updateData.Location       
+        machine.PriceForSale = updateData.PriceForSale
+        machine.RentalPricePerMonth = updateData.RentalPricePerMonth
+        machine.RentalPricePerDay = updateData.RentalPricePerDay
+        machine.SecurityDeposit = updateData.SecurityDeposit
+        machine.Specs = updateData.Specs
+        machine.Status = updateData.Status
+        machine.ListingType = updateData.ListingType
+
+        config.DB.Save(&amp;machine)
+        return c.JSON(http.StatusOK, machine)</span>
+}
+
+// DeleteListing godoc
+// @Summary Delete a listing
+// @Description Remove a listing. Only Owner or Admin can perform this.
+// @Tags Machines
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Machine ID"
+// @Success 200 {object} map[string]string "Success"
+// @Failure 403 {object} map[string]string "Not authorized"
+// @Router /machines/{id} [delete]
+func DeleteListing(c echo.Context) error <span class="cov8" title="1">{
+        id := c.Param("id")
+        var machine models.Machine
+
+        if err := config.DB.First(&amp;machine, "id = ?", id).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusNotFound, map[string]string{"error": "Machine not found"})
+        }</span>
+
+        <span class="cov8" title="1">user, err := getUserClaims(c)
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid token"})
+        }</span>
+
+        // RBAC: Allow deletion if user owns it OR user is admin
+        <span class="cov8" title="1">if machine.SellerID != user.ID &amp;&amp; user.Role != "admin" </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusForbidden, map[string]string{"error": "You are not authorized to delete this listing"})
+        }</span>
+
+        <span class="cov8" title="1">if err := config.DB.Delete(&amp;machine).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete listing"})
+        }</span>
+        <span class="cov8" title="1">return c.JSON(http.StatusOK, map[string]string{"message": "Listing deleted successfully"})</span>
+}</pre>
+		
+		<pre class="file" id="file3" style="display: none">package controllers
+
+import (
+        "net/http"
+        "time"
+
+        "github.com/labstack/echo/v4"
+        "github.com/vishwakarma-setu-backend/config"
+        "github.com/vishwakarma-setu-backend/models"
+)
+
+type MaintenanceRequest struct {
+        MachineID   string  `json:"machine_id"`
+        ServiceDate string  `json:"service_date"` // YYYY-MM-DD
+        Type        string  `json:"type"`
+        Description string  `json:"description"`
+        Cost        float64 `json:"cost"`
+        Technician  string  `json:"technician"`
+        DocumentURL string  `json:"document_url"`
+}
+
+// AddMaintenanceRecord godoc
+// @Summary Add a maintenance record
+// @Description Add a service history log for a machine. Only the owner can do this.
+// @Tags Maintenance
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param record body MaintenanceRequest true "Maintenance Data"
+// @Success 201 {object} models.MaintenanceRecord
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 403 {object} map[string]string "Not authorized"
+// @Router /maintenance [post]
+func AddMaintenanceRecord(c echo.Context) error <span class="cov8" title="1">{
+        var req MaintenanceRequest
+        if err := c.Bind(&amp;req); err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+        }</span>
+
+        <span class="cov8" title="1">ownerID, err := getUserClaims(c)
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+        }</span>
+
+        // Verify ownership
+        <span class="cov8" title="1">var machine models.Machine
+        if err := config.DB.First(&amp;machine, "id = ?", req.MachineID).Error; err != nil </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusNotFound, map[string]string{"error": "Machine not found"})
+        }</span>
+
+        <span class="cov8" title="1">if machine.SellerID != ownerID.ID </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusForbidden, map[string]string{"error": "You are not the owner of this machine"})
+        }</span>
+
+        <span class="cov8" title="1">date, _ := time.Parse("2006-01-02", req.ServiceDate)
+
+        record := models.MaintenanceRecord{
+                MachineID:   machine.ID,
+                ServiceDate: date,
+                Type:        req.Type,
+                Description: req.Description,
+                Cost:        req.Cost,
+                Technician:  req.Technician,
+                DocumentURL: req.DocumentURL,
+        }
+
+        if err := config.DB.Create(&amp;record).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to save record"})
+        }</span>
+
+        <span class="cov8" title="1">return c.JSON(http.StatusCreated, record)</span>
+}
+
+// GetMaintenanceHistory godoc
+// @Summary Get maintenance history
+// @Description Retrieve full service history for a machine.
+// @Tags Maintenance
+// @Produce json
+// @Param machine_id path string true "Machine ID"
+// @Success 200 {array} models.MaintenanceRecord
+// @Router /machines/{machine_id}/maintenance [get]
+func GetMaintenanceHistory(c echo.Context) error <span class="cov8" title="1">{
+        machineID := c.Param("machine_id")
+        var records []models.MaintenanceRecord
+
+        if err := config.DB.Where("machine_id = ?", machineID).Order("service_date desc").Find(&amp;records).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch records"})
+        }</span>
+
+        <span class="cov8" title="1">return c.JSON(http.StatusOK, records)</span>
+}</pre>
+		
+		<pre class="file" id="file4" style="display: none">package controllers
+
+import (
+        "math"
+        "net/http"
+        "time"
+
+        "github.com/labstack/echo/v4"
+        "github.com/vishwakarma-setu-backend/config"
+        "github.com/vishwakarma-setu-backend/models"
+)
+
+// RentalRequest represents the payload to create a rental
+type RentalRequest struct {
+        MachineID string `json:"machine_id" example:"uuid-string"`
+        StartDate string `json:"start_date" example:"2025-01-01"` // Format: YYYY-MM-DD
+        EndDate   string `json:"end_date" example:"2025-01-05"`   // Format: YYYY-MM-DD
+}
+
+// RentalStatusUpdate represents the payload to update status
+type RentalStatusUpdate struct {
+        Status string `json:"status" example:"approved"` // approved, rejected, completed
+}
+
+// CreateRentalRequest godoc
+// @Summary Request to rent a machine
+// @Description Initiate a rental request. Calculates fees based on duration. Requires Renter Auth.
+// @Tags Rentals
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body RentalRequest true "Rental Details"
+// @Success 201 {object} models.Rental
+// @Failure 400 {object} map[string]string "Invalid input or dates"
+// @Failure 404 {object} map[string]string "Machine not found"
+// @Router /rentals [post]
+func CreateRentalRequest(c echo.Context) error <span class="cov8" title="1">{
+        var req RentalRequest
+        if err := c.Bind(&amp;req); err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+        }</span>
+
+        <span class="cov8" title="1">if req.MachineID == "" </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "Machine ID is required"})
+        }</span>
+
+        // FIX: Use shared helper from listing.go
+        <span class="cov8" title="1">user, err := getUserClaims(c)
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+        }</span>
+
+        <span class="cov8" title="1">var machine models.Machine
+        if err := config.DB.First(&amp;machine, "id = ?", req.MachineID).Error; err != nil </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusNotFound, map[string]string{"error": "Machine not found"})
+        }</span>
+
+        <span class="cov8" title="1">if machine.ListingType == "sale" </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "This machine is not for rent"})
+        }</span>
+
+        <span class="cov8" title="1">layout := "2006-01-02"
+        start, err := time.Parse(layout, req.StartDate)
+        if err != nil </span><span class="cov0" title="0">{ return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid start_date format"}) }</span>
+        <span class="cov8" title="1">end, err := time.Parse(layout, req.EndDate)
+        if err != nil </span><span class="cov0" title="0">{ return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid end_date format"}) }</span>
+
+        <span class="cov8" title="1">if end.Before(start) </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "End date cannot be before start date"})
+        }</span>
+
+        <span class="cov8" title="1">days := math.Ceil(end.Sub(start).Hours() / 24)
+        if days &lt; 1 </span><span class="cov0" title="0">{ days = 1 }</span>
+
+        <span class="cov8" title="1">rentalFee := days * machine.RentalPricePerDay
+        platformFee := rentalFee * 0.05 // 5% Commission
+
+        rental := models.Rental{
+                MachineID:       machine.ID,
+                RenterID:        user.ID, // Use ID from claims
+                StartDate:       start,
+                EndDate:         end,
+                TotalAmount:     rentalFee,
+                SecurityDeposit: machine.SecurityDeposit,
+                PlatformFee:     platformFee,
+                Status:          "pending",
+        }
+
+        if err := config.DB.Create(&amp;rental).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create rental request"})
+        }</span>
+
+        <span class="cov8" title="1">return c.JSON(http.StatusCreated, rental)</span>
+}
+
+// GetMyRentals godoc
+// @Summary Get my rental history
+// @Description Retrieve all rental requests made by the logged-in user.
+// @Tags Rentals
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} models.Rental
+// @Router /rentals/my [get]
+func GetMyRentals(c echo.Context) error <span class="cov8" title="1">{
+        // FIX: Use shared helper
+        user, err := getUserClaims(c)
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+        }</span>
+
+        <span class="cov8" title="1">var rentals []models.Rental
+        if err := config.DB.Preload("Machine").Where("renter_id = ?", user.ID).Find(&amp;rentals).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch rentals"})
+        }</span>
+        
+        <span class="cov8" title="1">return c.JSON(http.StatusOK, rentals)</span>
+}
+
+// GetOwnerRentals godoc
+// @Summary Get rental requests for my machines
+// @Description Retrieve all incoming rental requests for machines owned by the logged-in user.
+// @Tags Rentals
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} models.Rental
+// @Router /rentals/manage [get]
+func GetOwnerRentals(c echo.Context) error <span class="cov8" title="1">{
+        // FIX: Use shared helper
+        user, err := getUserClaims(c)
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+        }</span>
+        
+        <span class="cov8" title="1">var rentals []models.Rental
+        err = config.DB.Preload("Machine").
+                Joins("JOIN machines ON machines.id = rentals.machine_id").
+                Where("machines.seller_id = ?", user.ID).
+                Find(&amp;rentals).Error
+
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch requests"})
+        }</span>
+
+        <span class="cov8" title="1">return c.JSON(http.StatusOK, rentals)</span>
+}
+
+// UpdateRentalStatus godoc
+// @Summary Update rental status
+// @Description Approve, reject, or complete a rental. Only the machine owner can do this.
+// @Tags Rentals
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Rental ID"
+// @Param status body RentalStatusUpdate true "New Status"
+// @Success 200 {object} models.Rental
+// @Failure 403 {object} map[string]string "Not authorized"
+// @Router /rentals/{id}/status [put]
+func UpdateRentalStatus(c echo.Context) error <span class="cov8" title="1">{
+        rentalID := c.Param("id")
+        
+        var req RentalStatusUpdate
+        if err := c.Bind(&amp;req); err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+        }</span>
+
+        // FIX: Use shared helper
+        <span class="cov8" title="1">user, err := getUserClaims(c)
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+        }</span>
+
+        <span class="cov8" title="1">var rental models.Rental
+        if err := config.DB.Preload("Machine").First(&amp;rental, "id = ?", rentalID).Error; err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusNotFound, map[string]string{"error": "Rental not found"})
+        }</span>
+
+        <span class="cov8" title="1">if rental.Machine.SellerID != user.ID </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusForbidden, map[string]string{"error": "You are not the owner of this machine"})
+        }</span>
+
+        <span class="cov8" title="1">rental.Status = req.Status
+        config.DB.Save(&amp;rental)
+
+        return c.JSON(http.StatusOK, rental)</span>
+}</pre>
+		
+		<pre class="file" id="file5" style="display: none">package controllers
+
+import (
+        "io"
+        "net/http"
+        "os"
+        "path/filepath"
+        // "time"
+
+        "github.com/google/uuid"
+        "github.com/labstack/echo/v4"
+)
+
+// UploadResponse
+type UploadResponse struct {
+        URL string `json:"url"`
+}
+
+// UploadImage godoc
+// @Summary Upload an image
+// @Description Upload an image file (jpg, png, jpeg) and get a local URL. Max size 5MB.
+// @Tags Utility
+// @Accept multipart/form-data
+// @Produce json
+// @Param file formData file true "Image file"
+// @Success 201 {object} UploadResponse
+// @Failure 400 {object} map[string]string "Invalid file"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /upload [post]
+func UploadImage(c echo.Context) error <span class="cov8" title="1">{
+        // 1. Read form file
+        file, err := c.FormFile("file")
+        if err != nil </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "No file uploaded"})
+        }</span>
+
+        // 2. Validate File Size (e.g., Max 5MB)
+        <span class="cov8" title="1">if file.Size &gt; 5*1024*1024 </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "File too large (Max 5MB)"})
+        }</span>
+
+        // 3. Open the file
+        <span class="cov8" title="1">src, err := file.Open()
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not open file"})
+        }</span>
+        <span class="cov8" title="1">defer src.Close()
+
+        // 4. Create unique filename
+        // Extract extension
+        ext := filepath.Ext(file.Filename)
+        if ext != ".jpg" &amp;&amp; ext != ".jpeg" &amp;&amp; ext != ".png" </span><span class="cov8" title="1">{
+                return c.JSON(http.StatusBadRequest, map[string]string{"error": "Only JPG, JPEG, and PNG allowed"})
+        }</span>
+        
+        // Generate random name: "upload-&lt;uuid&gt;&lt;ext&gt;"
+        <span class="cov8" title="1">newFileName := "upload-" + uuid.New().String() + ext
+        
+        // 5. Ensure upload directory exists
+        uploadPath := "./uploads"
+        if _, err := os.Stat(uploadPath); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                os.Mkdir(uploadPath, 0755)
+        }</span>
+
+        // 6. Create destination file
+        <span class="cov8" title="1">dstPath := filepath.Join(uploadPath, newFileName)
+        dst, err := os.Create(dstPath)
+        if err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not create destination file"})
+        }</span>
+        <span class="cov8" title="1">defer dst.Close()
+
+        // 7. Copy data
+        if _, err = io.Copy(dst, src); err != nil </span><span class="cov0" title="0">{
+                return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to save file"})
+        }</span>
+
+        // 8. Return the relative URL
+        // Ideally, construct full URL based on env var, but relative path works for simple setups
+        // The URL will look like: /uploads/upload-xyz-123.jpg
+        <span class="cov8" title="1">fileURL := "/uploads/" + newFileName
+
+        return c.JSON(http.StatusCreated, UploadResponse{URL: fileURL})</span>
+}</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

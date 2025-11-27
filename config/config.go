@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/vishwakarma-setu-backend/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"github.com/vishwakarma-setu-backend/models"
 )
 
 var DB *gorm.DB
@@ -27,7 +28,7 @@ func ConnectDatabase() *gorm.DB {
 	fmt.Println("✅ Connected to Database")
 	DB.Migrator().DropTable(&models.Machine{})
 	// fmt.Println("🔄 Running Migrations...")
-	err = DB.AutoMigrate(&models.Machine{})
+	err = DB.AutoMigrate(&models.Machine{}, &models.Rental{}, &models.InspectionReport{}, &models.MaintenanceRecord{})
 	if err != nil {
 		log.Fatalf("❌ AutoMigrate failed: %v", err)
 	}

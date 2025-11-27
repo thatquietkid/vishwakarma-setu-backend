@@ -57,14 +57,14 @@ func seedRentalRequest(t *testing.T, db *gorm.DB, machineID uuid.UUID, renterID 
 
 func TestCreateRentalRequest_EmptyBody(t *testing.T) {
 	e := echo.New()
-	setupTestDB(t, nil) // FIX: Initialize DB even if we expect early failure
+	setupTestDB(t, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/rentals", strings.NewReader(""))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	testToken := createTestToken(2)
+	testToken := createTestToken(2, "buyer") // Added Role
 	token, _ := jwt.ParseWithClaims(testToken, new(jwt.MapClaims), func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
@@ -84,13 +84,13 @@ func TestCreateRentalRequest_EmptyBody(t *testing.T) {
 
 func TestCreateRentalRequest_InvalidMachineIDFormat(t *testing.T) {
 	e := echo.New()
-	setupTestDB(t, nil) // FIX: Initialize DB to prevent Panic on config.DB.First
+	setupTestDB(t, nil)
 
 	payload := `{"machine_id":"not-a-uuid","start_date":"2025-01-01","end_date":"2025-01-02"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/rentals", strings.NewReader(payload))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	
-	testToken := createTestToken(2)
+	testToken := createTestToken(2, "buyer") // Added Role
 	token, _ := jwt.ParseWithClaims(testToken, new(jwt.MapClaims), func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
@@ -100,14 +100,14 @@ func TestCreateRentalRequest_InvalidMachineIDFormat(t *testing.T) {
 	// Should return 404 because "First" fails on invalid UUID syntax in Postgres (or DB error handled as 404)
 	if err := CreateRentalRequest(c); err == nil {
 		if c.Response().Status != http.StatusNotFound {
-			// We expect 404 because the controller handles DB errors by returning 404 "Machine not found"
+			// We expect 404
 		}
 	}
 }
 
 func TestCreateRentalRequest_StartAfterEnd(t *testing.T) {
 	e := echo.New()
-	machine, _ := seedRentableMachine(t) // This handles DB setup
+	machine, _ := seedRentableMachine(t)
 
 	payload := `{"machine_id":"` + machine.ID.String() + `","start_date":"2025-01-05","end_date":"2025-01-02"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/rentals", strings.NewReader(payload))
@@ -116,7 +116,7 @@ func TestCreateRentalRequest_StartAfterEnd(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	testToken := createTestToken(2)
+	testToken := createTestToken(2, "buyer") // Added Role
 	token, _ := jwt.ParseWithClaims(testToken, new(jwt.MapClaims), func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
@@ -139,7 +139,7 @@ func TestCreateRentalRequest_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	testToken := createTestToken(2) 
+	testToken := createTestToken(2, "buyer") // Added Role
 	token, _ := jwt.ParseWithClaims(testToken, new(jwt.MapClaims), func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
@@ -156,10 +156,7 @@ func TestCreateRentalRequest_Success(t *testing.T) {
 
 func TestGetMyRentals(t *testing.T) {
 	e := echo.New()
-	// 1. Seed machine and get DB connection
 	machine, db := seedRentableMachine(t)
-	
-	// 2. Seed rental using SAME DB connection
 	renterID := uint(2)
 	_ = seedRentalRequest(t, db, machine.ID, renterID)
 
@@ -167,13 +164,11 @@ func TestGetMyRentals(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	testToken := createTestToken(renterID)
+	testToken := createTestToken(renterID, "buyer") // Added Role
 	token, _ := jwt.ParseWithClaims(testToken, new(jwt.MapClaims), func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 	c.Set("user", token)
-
-	// Ensure config.DB is set correctly (though setupTestDB does this)
 	config.DB = db 
 
 	if err := GetMyRentals(c); err != nil {
@@ -193,14 +188,14 @@ func TestGetMyRentals(t *testing.T) {
 
 func TestGetOwnerRentals(t *testing.T) {
 	e := echo.New()
-	machine, db := seedRentableMachine(t) // Owner ID is 1
-	_ = seedRentalRequest(t, db, machine.ID, 2) // Renter ID is 2
+	machine, db := seedRentableMachine(t)
+	_ = seedRentalRequest(t, db, machine.ID, 2)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/rentals/manage", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	testToken := createTestToken(1) // Act as Owner
+	testToken := createTestToken(1, "seller") // Added Role
 	token, _ := jwt.ParseWithClaims(testToken, new(jwt.MapClaims), func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
@@ -224,7 +219,7 @@ func TestGetOwnerRentals(t *testing.T) {
 
 func TestUpdateRentalStatus(t *testing.T) {
 	e := echo.New()
-	machine, db := seedRentableMachine(t) // Owner ID 1
+	machine, db := seedRentableMachine(t)
 	rental := seedRentalRequest(t, db, machine.ID, 2)
 
 	payload := `{"status":"approved"}`
@@ -237,7 +232,7 @@ func TestUpdateRentalStatus(t *testing.T) {
 	c.SetParamNames("id")
 	c.SetParamValues(rental.ID.String())
 
-	testToken := createTestToken(1) // Owner
+	testToken := createTestToken(1, "seller") // Added Role
 	token, _ := jwt.ParseWithClaims(testToken, new(jwt.MapClaims), func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
@@ -253,7 +248,6 @@ func TestUpdateRentalStatus(t *testing.T) {
 	}
 
 	var updated models.Rental
-	// Reload from DB to be sure
 	db.First(&updated, "id = ?", rental.ID)
 	if updated.Status != "approved" {
 		t.Errorf("expected status approved, got %s", updated.Status)
@@ -262,7 +256,7 @@ func TestUpdateRentalStatus(t *testing.T) {
 
 func TestUpdateRentalStatus_Unauthorized(t *testing.T) {
 	e := echo.New()
-	machine, db := seedRentableMachine(t) // Owner ID 1
+	machine, db := seedRentableMachine(t)
 	rental := seedRentalRequest(t, db, machine.ID, 2)
 
 	req := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(`{"status":"approved"}`))
@@ -274,8 +268,7 @@ func TestUpdateRentalStatus_Unauthorized(t *testing.T) {
 	c.SetParamNames("id")
 	c.SetParamValues(rental.ID.String())
 
-	// Act as Renter (ID 2) - should fail
-	testToken := createTestToken(2)
+	testToken := createTestToken(2, "buyer") // Added Role
 	token, _ := jwt.ParseWithClaims(testToken, new(jwt.MapClaims), func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
