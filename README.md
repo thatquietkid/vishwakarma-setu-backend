@@ -1,18 +1,33 @@
 # Vishwakarma Setu - Backend API 🏗️
 
-The core backend microservice for **Vishwakarma Setu**, a trusted B2B marketplace for verifying, trading, and leasing industrial machinery.
+The core backend microservice for Vishwakarma Setu, a trusted B2B marketplace for verifying, trading, and leasing industrial machinery.
 
-This service manages **machine listings, rentals, search**, and acts as the **primary API** for the frontend.
+This service manages machine listings, rentals, inspections, maintenance history, and payments, acting as the primary API for the frontend.
+
+---
+
+## 📋 Table of Contents
+
+- [Tech Stack](#-tech-stack) 
+- [Prerequisites](#-prerequisites)
+- [Setup & Installation](#-setup--installation)
+- [Running the Application](#-running-the-application)
+- [Testing & Coverage](#-testing--coverage)
+- [API Documentation (Swagger)](#-api-documentation-swagger--)
+- [API Endpoints & Examples](#-api-endpoints--examples-)
+- [Project Structure](#-project-structure-)
+- [Troubleshooting](#-troubleshooting-)
 
 ---
 
 ## 🚀 Tech Stack
 
-- **Language:** Go (Golang)
-- **Framework:** Echo v4 – High-performance, extensible web framework
-- **ORM:** GORM – Fantastic ORM for Go
-- **Database:** PostgreSQL
-- **Authentication:** JWT (via echo-jwt)
+- **Language:** Go (Golang)  
+- **Framework:** Echo v4 – High-performance, extensible web framework  
+- **ORM:** GORM – Fantastic ORM for Go  
+- **Database:** PostgreSQL  
+- **Authentication:** JWT (via echo-jwt)  
+- **Documentation:** Swagger (Swaggo)
 
 ---
 
@@ -20,9 +35,11 @@ This service manages **machine listings, rentals, search**, and acts as the **pr
 
 Ensure the following are installed:
 
-- Go (1.25.4)
-- PostgreSQL (local or Docker)
-- Git
+- Go (1.25.4)  
+- PostgreSQL (local or Docker)  
+- Git  
+- (Optional) Docker & Docker Compose  
+- (Optional) Make (for running tests)
 
 ---
 
@@ -45,162 +62,185 @@ go mod tidy
 
 Create a `.env` file in the project root:
 
-```env
+```
 # Server Config
-PORT=1324
+PORT=1326
 FRONTEND_URL=http://localhost:3000
 
 # Database Config
-DATABASE_DSN="host=localhost user=vishwakarma_user password=password dbname=vishwakarma_db port=5432 sslmode=disable"
+# Update credentials as per your local setup
+DATABASE_DSN="host=localhost user=vishwakarma_user password=password dbname=vishwakarma_db port=5432 sslmode=disable TimeZone=Asia/Kolkata"
 
-# Auth Config
+# Auth Config (Must match Auth Service)
 JWT_SECRET="your_jwt_secret_key"
 ```
-
-### 4. Database Setup
-
-Ensure PostgreSQL is running, then create the database:
-
-```sql
-CREATE DATABASE vishwakarma_db;
-```
-
-> The application will automatically migrate schema on first run.
 
 ---
 
 ## 🏃‍♂️ Running the Application
 
-### Development Mode
+### Local Development
 
 ```bash
 go run .
 ```
 
-The server runs at (http://localhost:1326)[http://localhost:1326] (or the configured `PORT`). The API is mounted under the /api base path.
+The server runs at **[http://localhost:1326](http://localhost:1326)** (or the configured PORT).
+The API is mounted under the `/api` base path.
+
+### Docker
+
+To run the entire stack (Backend + Database) using Docker Compose:
+
+```bash
+docker-compose up --build
+```
+
+---
+
+## 🧪 Testing & Coverage
+
+We use gotestsum for formatted test output. A Makefile is provided for convenience.
+
+### Run Tests
+
+```bash
+# Run all tests with status output
+make test
+
+# Run tests with detailed verbose output
+make test-verbose
+```
+
+### Check Coverage
+
+```bash
+# Run tests and display coverage summary in terminal
+make test-cover
+
+# Generate and open detailed HTML coverage report in browser
+make test-html
+```
+
+### Current Coverage Metrics:
+
+* Controllers: ~89% Coverage
+* Auth Logic: Verified via Integration Tests
+* Rental Logic: Verified via Integration Tests
 
 ---
 
 ## 📘 API Documentation (Swagger / OpenAPI)
 
-The project includes Swagger annotations in the code (main.go, controllers) and ships generated docs. By default the server exposes the Swagger UI when swagger handlers are registered (commonly at `/swagger/index.html`).
+The project includes Swagger annotations.
 
-To generate or update the docs locally:
+### Install Swag:
 
-1. Install swag (if not installed):
 ```bash
 go install github.com/swaggo/swag/cmd/swag@latest
 ```
 
-2. Generate docs:
+### Generate Docs:
+
 ```bash
-swag init -g main.go -o docs
+swag init
 ```
 
-3. Run the server:
+### View Docs
+
+Start the server and visit:
+**[http://localhost:1326/swagger/index.html](http://localhost:1326/swagger/index.html)**
+
+---
+
+## 📚 API Endpoints & Examples
+
+---
+
+### 🟢 Public Routes
+
+| Method | Endpoint                     | Description                             |
+| ------ | ---------------------------- | --------------------------------------- |
+| GET    | /health                      | Server health check                     |
+| GET    | /api/machines                | Get all listings (Search, Filter, Sort) |
+| GET    | /api/machines/:id            | Get machine details                     |
+| GET    | /api/machines/:id/inspection | Get inspection report                   |
+
+---
+
+### 🔒 Protected Routes (Requires Bearer Token)
+
+Header:
+`Authorization: Bearer <your_jwt_token>`
+
+---
+
+### 1. Create Machine Listing
+
+**Request:**
+
 ```bash
-PORT=1326 go run .
-```
-
-4. Open the Swagger UI in your browser:
-- http://localhost:1326/swagger/index.html
-or, if the project serves the JSON directly:
-- http://localhost:1326/swagger/doc.json
-
-Notes:
-- The service uses BasePath `/api` (see main.go annotations).
-- Swagger security is configured as BearerAuth; use the Authorization header: `Authorization: Bearer <token>`.
-- If your host/port differ, replace `localhost:1326` accordingly.
-
----
-
-## 📚 API Endpoints
-
----
-
-## 🟢 Public Routes
-
-These routes **do not require authentication**.
-
-| Method | Endpoint            | Description                       |
-| ------ | ------------------- | --------------------------------- |
-| GET    | `/health`           | Check server status               |
-| GET    | `/api/machines`     | Get all machine listings (supports search & filtering) |
-| GET    | `/api/machines/:id` | Get details of a specific machine |
-
-### Query Parameters for `/api/machines`
-
-| Query       | Description                                                                 | Example                           |
-| ----------- | --------------------------------------------------------------------------- | --------------------------------- |
-| q           | Keyword search across title & description (case-insensitive, partial match) | `/api/machines?q=haas`            |
-| category    | Exact category filter (e.g., `CNC Mill`, `Lathe`)                            | `/api/machines?category=Lathe`    |
-| manufacturer| Exact manufacturer filter                                                   | `/api/machines?manufacturer=Haas` |
-| location    | Location filter (case-insensitive, substring match)                         | `/api/machines?location=Faridabad`|
-| type        | Listing type: `sale`, `rent`, or `both` (filters to matching listings)      | `/api/machines?type=rent`         |
-| min_price   | Minimum sale price (applies to sale listings)                               | `/api/machines?min_price=100000`  |
-| max_price   | Maximum sale price                                                           | `/api/machines?max_price=500000`  |
-| sort        | Sorting: `price_asc`, `price_desc`, `oldest`, `newest` (default: `newest`)  | `/api/machines?sort=price_asc`    |
-| page        | Page number for pagination (default: 1)                                      | `/api/machines?page=2`            |
-| limit       | Items per page (default: 10)                                                 | `/api/machines?limit=20`          |
-
-Response includes pagination metadata:
-- data: array of machine objects
-- total: total number of matched listings
-- page, limit
-- total_pages
-
----
-
-## 🔒 Protected Routes
-
-These routes **require JWT authentication**.
-
-**Header format:**
-
-```
-Authorization: Bearer <your_jwt_token>
-```
-
-| Method | Endpoint            | Description                  | Body |
-| ------ | ------------------- | ---------------------------- | ---- |
-| POST   | `/api/machines`     | Create a new machine listing | JSON |
-| PUT    | `/api/machines/:id` | Update an existing listing   | JSON |
-| DELETE | `/api/machines/:id` | Delete a listing             | None |
-
----
-
-### 📌 Create Machine Example
-
-**POST** `/api/machines` (Protected - requires Authorization header)
-
-Request body (example):
-
-```json
-{
+curl -X POST http://localhost:1326/api/machines \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
     "title": "2019 Haas VF-2 CNC Mill",
     "description": "Excellent condition vertical machining center.",
     "manufacturer": "Haas Automation",
     "model_number": "VF-2",
     "year_of_manufacture": 2019,
-    "category": "CNC Mill",
-    "location": "Faridabad, Haryana",
     "listing_type": "both",
     "status": "listed",
     "price_for_sale": 2500000,
     "rental_price_per_month": 120000,
-    "rental_price_per_day": 6000,
     "security_deposit": 200000,
     "specs": {
         "spindle_speed": "8100 RPM",
         "axis_travel": "30x16x20 inches"
     }
+}'
+```
+
+**Response (201 Created):**
+
+```json
+{
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "seller_id": 1,
+    "title": "2019 Haas VF-2 CNC Mill",
+    "status": "listed",
+    "created_at": "2025-11-27T10:00:00Z"
 }
 ```
 
-Notes:
-- seller_id is taken from the authenticated JWT token; do not include it in the request.
-- specs is stored as JSON (flexible key-value spec object).
-- For rental listings, use `listing_type` = `rent` or `both`. Price filters (`min_price`/`max_price`) apply to sale price.
+---
+
+### 2. Book a Rental
+
+**Request:**
+
+```bash
+curl -X POST http://localhost:1326/api/rentals \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "machine_id": "550e8400-e29b-41d4-a716-446655440000",
+    "start_date": "2025-01-01",
+    "end_date": "2025-01-05"
+}'
+```
+
+**Response (201 Created):**
+
+```json
+{
+    "id": "rental-uuid-1234",
+    "machine_id": "550e8400-e29b-41d4-a716-446655440000",
+    "total_amount": 20000,
+    "security_deposit": 200000,
+    "status": "pending"
+}
+```
 
 ---
 
@@ -209,55 +249,28 @@ Notes:
 ```
 vishwakarma-setu-backend/
 ├── config/
-│   └── database.go      # DB connection & migration logic
+│   └config.go           # DB configuration
 ├── controllers/
-│   ├── index.go         # Controller package index / helpers
-│   ├── listing.go       # Handlers for Machine CRUD operations
-│   ├── listing_test.go  # Tests for listing handlers (skeleton)
-│   ├── rentals.go       # Handlers for rental requests & management
-│   └── rentals_test.go  # Tests for rentals (skeleton)
-├── docs/
-│   ├── docs.go          # Swagger docs package (placeholder / generated)
-│   ├── swagger.json     # Generated swagger JSON (placeholder)
-│   └── swagger.yaml     # Generated swagger YAML (placeholder)
+│   ├── index.go         # General helpers
+│   ├── listing.go       # Machine CRUD
+│   ├── rentals.go       # Rental logic
+│   ├── inspection.go    # Inspection reports
+│   ├── maintenance.go   # Maintenance history
+│   ├── payment.go       # Payment gateway integration
+│   └── upload.go        # File upload handler
+├── middleware/
+│   └── auth.go          # JWT Middleware
 ├── models/
-│   ├── machines.go      # Gorm model definition for 'machines'
-│   └── rentals.go       # Gorm model definition for 'rentals'
-├── routes/
-│   └── routes.go        # API route definitions & grouping
-├── coverage-controllers.html  # Coverage report (controllers) - HTML (placeholder)
-├── report.html          # Test/report HTML (placeholder)
-├── LICENSE              # Project license
-├── .env                 # Environment variables (ignored in Git)
-├── go.mod               # Go module definition
-└── main.go              # Entry point & server configuration
-```
-
----
-
-## 🐞 Troubleshooting
-
-### ❌ **"Invalid token claims"**
-
-* Ensure the Auth service includes `user_id` (numeric) in JWT payload.
-* Verify `JWT_SECRET` matches exactly in both services.
-
----
-
-### ❌ Database connection failed
-
-* Check if PostgreSQL is running.
-* Verify `.env` credentials.
-* Ensure the database exists.
-
-
-### Testing * Run tests with:
-
-```bash
-go test ./...
-```
-
-To view coverage report in HTML format, run:
-```bash
-go test -json ./... | go-test-report -o report.html
+│   ├── machine.go       # Machine schema
+│   ├── rental.go        # Rental schema
+│   ├── inspection.go    # Inspection schema
+│   └── maintenance.go   # MaintenRoute definitions
+├── scripts/
+│   └── init_db.sh       # DB Init script
+├── docs/                # Generated Swagger docs
+├── .env                 # Env variables
+├── docker-compose.yml   # Docker config
+├── Dockerfile           # Docker build definition
+├── Makefile             # Test commands
+└── main.go              # Entry point
 ```
